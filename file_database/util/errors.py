@@ -37,3 +37,7 @@ class RecordNotFoundError(Error):
 class InvalidRecordIndexError(Error):
     """Raised when the user tries to find a record with an index that doesn't exist"""
     pass
+
+class UpdatePrimaryKeyError(Error):
+    """Raised when the user tries to update a record's primary key"""
+    pass

@@ -68,25 +68,27 @@ class CommandLineInterface:
         print(self.format_records([record]))
 
     def prompt_user_to_find_record(self, verb):
-        """ prompts the user to find a record by primary key """
+        """ prompts the user to find a record by primary key
+            returns record and index of record if found
+        """
         if self.no_databases_open():
-            return
+            return None, None
         
         try:
             primary_key = get_user_input(f"Enter the primary key of the record to {verb}: ")
             primary_key = int(primary_key) # TODO fix this for non ints
         except EmptyInputError:
             print_error("Empty record key. Aborting.")
-            return
+            return None, None
         except ValueError:
             print_error("Invalid key. Aborting.")
-            return
+            return None, None
         
         try:
             return self.database_manager.current_database.find(primary_key)
         except RecordNotFoundError:
             print_error(f"No record found with key {primary_key}")
-            return
+            return None, None
 
     def no_databases_open(self):
         """ returns True and prints error message if no databases are open """
@@ -146,12 +148,12 @@ class CommandLineInterface:
             self.database_manager.close_database()
 
     def display_record(self):
-        record = self.prompt_user_to_find_record("display")
+        index, record = self.prompt_user_to_find_record("display")
         if record is not None: # error messages already printed
             self.print_record(record)
 
     def update_record(self):
-        record = self.prompt_user_to_find_record("update")
+        index, record = self.prompt_user_to_find_record("update")
         if record is None:
             return # error messages already printed
         
@@ -162,12 +164,16 @@ class CommandLineInterface:
                 self.database_manager.current_database.fields
             )
             # cant update primary key
-            assert field != self.database_manager.current_database.fields[0]
+            if field == self.database_manager.current_database.fields[0]:
+                raise UpdatePrimaryKeyError()
         except EmptyInputError:
             print_error("Empty field. Aborting")
             return
-        except AssertionError:
+        except UpdatePrimaryKeyError:
             print_error("Cannot update primary Key. Aborting")
+            return
+        except InvalidInputError:
+            print_error(f"Field does not exist. Aborting")
             return
             
 
@@ -179,7 +185,7 @@ class CommandLineInterface:
         
         prompt = f"Are you sure you want to update {field} to \"{new_value}\"? [Y/n] "
         if confirm(prompt, default='y'):
-            self.database_manager.current_database.update(record, field, new_value)
+            self.database_manager.current_database.update(index, record, field, new_value)
 
 
         
@@ -218,7 +224,7 @@ class CommandLineInterface:
 
 
     def delete_record(self):
-        record = self.prompt_user_to_find_record("delete")
+        index, record = self.prompt_user_to_find_record("delete")
         if record is None:
             return # error messages already printed
 
@@ -226,7 +232,7 @@ class CommandLineInterface:
         
         prompt = f"Are you sure you want to delete this record? [Y/n] "
         if confirm(prompt, default='y'):
-            self.database_manager.current_database.delete(record)
+            self.database_manager.current_database.delete(index)
 
 
     def quit(self):

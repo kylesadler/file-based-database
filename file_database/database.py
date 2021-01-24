@@ -7,6 +7,8 @@ from .util import *
 
     illegal characters: , :
 
+    make sure record size does not overflow
+
 """
 
 class Database:
@@ -75,7 +77,7 @@ class Database:
     # TODO clean up 
 
     def find(self, primary_key):
-        """ returns record with primary_key
+        """ returns index, record of record with primary_key
             raises RecordNotFoundError if record not found
         """
         assert self.is_open()
@@ -83,9 +85,9 @@ class Database:
         # check end values
         endpoints = [0, self.num_records-1]
         for point in endpoints:
-            _, key, record = self.get_record_and_key(point)
+            index, key, record = self.find_record_and_key(point)
             if key == primary_key:
-                return record
+                return index, record
 
         return self._binary_search(primary_key, endpoints[0], endpoints[1])
 
@@ -94,59 +96,129 @@ class Database:
 
         mid = (end_index + start_index + 1) // 2
 
-        if mid in [start_index, end_index]:
+        
+        index, record_key, record = self.find_record_and_key(mid)
+        
+        # print(start_index, mid, index, end_index, key)
+        if index in [start_index, end_index]:
             raise RecordNotFoundError()
-        
-        index, record_key, record = self.get_record_and_key(mid)
-        
+
         if record_key == key:
-            return record
+            return index, record
         elif record_key > key:
             return self._binary_search(key, start_index, index)
         else:
             return self._binary_search(key, index, end_index)
 
-    def get_record(self, i):
+    def get_nonblank_record(self, i):
         """ returns index and record of first nonblank entry at or after ith record in database. 0 indexed """
-        if i >= self.num_records:
+        if i >= self.num_records or i < 0:
             raise InvalidRecordIndexError()
         
         self.file.seek(i * self.line_size)
-        record = None
-        index = i
-        while record == None:
-            record = self.parse_line(self.file.readline())
-            index += 1
+        for index in range(i, self.num_records):
+            record = self.read_record()
+            if record != None:
+                return index, record
 
-        return index - 1, record
-    
+    def get_last_nonblank_record(self):
+        """ returns index and record of first nonblank entry at or after ith record in database. 0 indexed """
+        for i in range(self.num_records -1, -1, -1):
+            record = self.read_record(i)
+            if record != None:
+                return i, record
+
+    def read_record(self, index=None):
+        if index != None:
+            self.file.seek(index * self.line_size)
+        return self.parse_line(self.file.readline())
+
+
+    def write_record(self, record, index=None):
+        """ writes a record in the data file at specified location (or current location if index is None) """
+        if index != None:
+            self.file.seek(index * self.line_size)
+        self.file.write(self.format_record(record))
+
 
     def find_first_n_records(self, n):
         assert self.is_open()
         records = []
         index = 0
         for i in range(n):
-            index, record = self.get_record(index)
+            index, record = self.get_nonblank_record(index)
             index += 1
             records.append(record)
 
         return records
 
-    def update(self, record, field, new_value):
-        """ each record is a list of values with equal length to fields """
-        assert self.is_open()
-        pass
 
-    def delete(self, record):
+    def update(self, index, record, field, new_value):
         """ each record is a list of values with equal length to fields """
         assert self.is_open()
-        pass
+        
+        new_record = record.copy()
+        field_index = list(self.field_to_length.keys()).index(field)
+        new_record[field_index] = new_value
+
+        self.write_record(new_record, index)
+
+    def delete(self, index):
+        """  """
+        assert self.is_open()
+        self.write_record(['']*self.num_fields, index) # write blank line
 
     def insert(self, record):
         """ each record is a list of values with equal length to fields """
         assert self.is_open()
-        pass
 
+        key = self.get_key(record)
+
+        # if record should go at start of file
+        first_index, first_record = self.get_nonblank_record(0)
+        if self.get_key(first_record) >= key:
+            if first_index != 0:
+                return self.write_record(record, 0)
+            else:
+                return self.rewrite_and_insert(record)
+        
+        # if record should go at end of file
+        last_index, last_record = self.get_last_nonblank_record()
+        if self.get_key(last_record) <= key:
+            if last_index != self.num_records - 1:
+                return self.write_record(record, self.num_records - 1)
+            else:
+                return self.rewrite_and_insert(record)
+
+
+        index = self.insert_binary_search(key, endpoints[0], endpoints[1])
+        self.write_record(record, index)
+
+    def rewrite_and_insert(self, record):
+        """ rewrite the entire file, inserting the record, and leaving blank lines between entries """
+        key = self.get_key(record)
+        self.file.seek(0)
+        for i, line in enumerate(self.file):
+            pass
+
+
+
+
+    def insert_binary_search(self, key, start_index, end_index):
+
+        mid = (end_index + start_index + 1) // 2
+
+        if mid in [start_index, end_index]:
+            return mid
+        
+        index, record_key, record = self.find_record_and_key(mid)
+        
+        if record_key == key:
+            return index, record
+        elif record_key > key:
+            return self._binary_search(key, start_index, index)
+        else:
+            return self._binary_search(key, index, end_index)
 
 
 
@@ -213,38 +285,41 @@ class Database:
 
         return os.path.join(self.dir, data_path), os.path.join(self.dir, config_path)
     
-    def get_record_and_key(self, i):
+    def find_record_and_key(self, i):
         """ returns index, key, and record of first nonblank record at or after index i """
-        index, record = self.get_record(i) 
-        return index, int(record[0]), record # TODO fix this not having to be an int
+        index, record = self.get_nonblank_record(i) 
+        return index, self.get_key(record), record # TODO fix this not having to be an int
+
+    def get_key(self, record):
+        return int(record[0])
 
     def parse_line(self, line):
         """ returns list of fields from line in database data file. removes newline at end """
-        if len(line) > 0 and line[-1] == '\n':
-            line = line[:-1]
-
-        if len(line) == 0:
+        try:
+            values = []
+            i = 0
+            for length in self.field_to_length.values():
+                values.append(line[i:i+length].strip())
+                i+=length
+            assert not all(x == '' for x in values)
+        except (AssertionError, IndexError):
             return None
+        else:
+            return values
 
-        values = []
-        i = 0
-        for length in self.field_to_length.values():
-            values.append(line[i:i+length].strip())
-            i+=length
-            
-        return values
+
+    def format_record(self, record):
+        """ values is a list of strings to store
+            widths is a list of int length of each field
+            returns a string that is padded with the correct field widths
+        """
+
+        # TODO time zip and maybe remove
+        return ''.join([fixed_len(x, l) for x, l in zip(record, self.field_to_length.values())]) + '\n'
+
 
 def parse_csv_line(line):
     """ from a CSV line, returns list of fields. removes newline at end """
     if line[-1] == '\n':
         line = line[:-1]
     return line.split(',')
-
-def pad_values(values, widths):
-    """ values is a list of strings to store
-        widths is a list of int length of each field
-        returns a string that is padded with the correct field widths
-    """
-
-    # TODO time zip and maybe remove
-    return ''.join([fixed_len(v, w) for v, w in zip(values, widths)])
