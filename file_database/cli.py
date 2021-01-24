@@ -49,16 +49,17 @@ class CommandLineInterface:
         print('Empty or invalid command. Select an integer from 1-9 or type the name of a command.')
 
     def format_records(self, records):
+        spacing = 2
+        db = self.database_manager.current_database
         data = []
-        data.append(self.database_manager.current_database.fields)
+        data.append(db.fields)
         data.extend(records)
-        num_fields = len(data[0]) # TODO make this a database property
-        max_column_widths = [max_len([x[i] for x in data]) for i in range(num_fields)]
+        max_column_widths = [max_len([x[i] for x in data]) for i in range(db.num_fields)]
 
         output = ''
         for row in data:
-            for i in range(num_fields):
-                output += fixed_len(row[i], max_column_widths[i]+4)
+            for i in range(db.num_fields):
+                output += fixed_len(row[i], max_column_widths[i]+spacing)
             output += '\n'
 
         return output
@@ -67,17 +68,25 @@ class CommandLineInterface:
         print(self.format_records([record]))
 
     def prompt_user_to_find_record(self, verb):
-        """ prompts the user to find a record by ID """
+        """ prompts the user to find a record by primary key """
         if self.no_databases_open():
             return
         
         try:
-            primary_key = get_user_input(f"Enter the ID of the record to {verb}: ")
+            primary_key = get_user_input(f"Enter the primary key of the record to {verb}: ")
+            primary_key = int(primary_key) # TODO fix this for non ints
         except EmptyInputError:
-            print_error("Empty record ID. Aborting")
+            print_error("Empty record key. Aborting.")
             return
-        else:
+        except ValueError:
+            print_error("Invalid key. Aborting.")
+            return
+        
+        try:
             return self.database_manager.current_database.find(primary_key)
+        except RecordNotFoundError:
+            print_error(f"No record found with key {primary_key}")
+            return
 
     def no_databases_open(self):
         """ returns True and prints error message if no databases are open """
@@ -85,7 +94,9 @@ class CommandLineInterface:
             print_error("No database open. Aborting.")
             return True
         return False
-        
+
+    def get_main_dir(self):
+        return os.path.abspath(os.path.join(get_current_dir(__file__), '..'))
 
 
     # user commands
@@ -93,17 +104,16 @@ class CommandLineInterface:
         print("Creating database...")
         
         try:
-            name = get_user_input("Enter the name of the database to create (must be unique): ")
+            name = get_user_input("Enter the name of the database to create (case insensitive, must be unique): ")
         except EmptyInputError:
             print_error("Empty database name. Aborting")
             return
         
-        current_directory = get_current_dir(__file__)
-        default_csv_path = os.path.join(current_directory, f'{name}.csv')
+        default_csv_path = os.path.join(self.get_main_dir(), f'{name}.csv')
         path = input(f"Enter the CSV file to import ({default_csv_path}): ") or default_csv_path
 
         try:
-            self.database_manager.create_database(name, path)
+            self.database_manager.create_database(name.lower(), path)
         except InvalidPathError:
             print_error(f"Path {path} could not be resolved. Aborting.")
         except DuplicateDatabaseNameError:
@@ -118,6 +128,7 @@ class CommandLineInterface:
             if len(available_databases) == 0:
                 print_error("No databases to open. Aborting.")
             else:
+                print_options(available_databases)
                 try:
                     db_name = get_option_from_user(
                         "Which Database would you like to open? ",
@@ -150,7 +161,8 @@ class CommandLineInterface:
                 f"Enter the field to update: ",
                 self.database_manager.current_database.fields
             )
-            assert field != "ID" # TODO make this standard across datasets
+            # cant update primary key
+            assert field != self.database_manager.current_database.fields[0]
         except EmptyInputError:
             print_error("Empty field. Aborting")
             return
@@ -177,9 +189,8 @@ class CommandLineInterface:
         if self.no_databases_open():
             return
         
-        current_directory = get_current_dir(__file__)
-        default_path = os.path.join(current_directory, 'report.txt')
-        path = input("Enter the file path of the report to generate (): ") or default_path
+        default_path = os.path.join(self.get_main_dir(), 'report.txt')
+        path = input(f"Enter the file path of the report to generate ({default_path}): ") or default_path
 
         records = self.database_manager.current_database.find_first_n_records(10)
         with open(path, 'w') as f:

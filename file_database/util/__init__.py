@@ -22,12 +22,12 @@ def get_option_from_user(message, options):
         index = int(user_input) - 1
         assert index >= 0
         return options[index]
-    except (ValueError, AssertionError):
+    except (ValueError, AssertionError, IndexError):
         # parse as string command
         if user_input in options:
             return user_input
         else:
-            selected_options = [opt for opt in options if opt.startswith(user_input)]
+            selected_options = [opt for opt in options if opt.lower().startswith(user_input)]
             if len(selected_options) != 1:
                 raise InvalidInputError()
             return selected_options[0]
@@ -53,7 +53,7 @@ def print_error(message):
 
 def is_csv_file(path):
     """ returns True if path is a path to a valid csv file """
-    return os.path.exists(path) and os.path.isfile(path) and os.path.splitext(path) == '.csv'
+    return os.path.exists(path) and os.path.isfile(path) and os.path.splitext(path)[-1] == '.csv'
 
 def makedir(path):
     if not os.path.exists(path):

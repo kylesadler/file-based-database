@@ -30,16 +30,20 @@ class DatabaseManager:
         
         options = [d for d in self.databases if d.name == name]
         assert len(options) == 1
-        self.current_database = database_name[0]
+        self.current_database = options[0]
+        self.current_database.open()
 
 
     def close_database(self):
+        self.current_database.close()
         self.current_database = None
 
 
     def init_databases(self):
         output = []
-        for path in os.listdir(self.data_dir):
+        for dir_name in os.listdir(self.data_dir):
+            path = os.path.join(self.data_dir, dir_name)
+            print(path)
             if os.path.isdir(path):
                 output.append(Database(path))
 

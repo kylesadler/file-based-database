@@ -25,3 +25,15 @@ class InvalidPathError(Error):
 class DuplicateDatabaseNameError(Error):
     """Raised when a database name is not unique"""
     pass
+
+class NoFilesFoundError(Error):
+    """Raised when no config or data files are found in a database's directory"""
+    pass
+
+class RecordNotFoundError(Error):
+    """Raised when no record is found in a database"""
+    pass
+
+class InvalidRecordIndexError(Error):
+    """Raised when the user tries to find a record with an index that doesn't exist"""
+    pass
