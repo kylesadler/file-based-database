@@ -38,69 +38,6 @@ class CommandLineInterface:
                     self.NAME_TO_COMMAND[command_name]()
                     input_received = True
 
-
-    def print_welcome(self):
-        print("Welcome to KyleDB!")
-
-    def print_menu(self):
-        print_options(list(self.NAME_TO_COMMAND.keys()))
-
-    def print_input_error(self):
-        print('Empty or invalid command. Select an integer from 1-9 or type the name of a command.')
-
-    def format_records(self, records):
-        spacing = 2
-        db = self.database_manager.current_database
-        data = []
-        data.append(db.fields)
-        data.extend(records)
-        max_column_widths = [max_len([x[i] for x in data]) for i in range(db.num_fields)]
-
-        output = ''
-        for row in data:
-            for i in range(db.num_fields):
-                output += fixed_len(row[i], max_column_widths[i]+spacing)
-            output += '\n'
-
-        return output
-
-    def print_record(self, record):
-        print(self.format_records([record]))
-
-    def prompt_user_to_find_record(self, verb):
-        """ prompts the user to find a record by primary key
-            returns record and index of record if found
-        """
-        if self.no_databases_open():
-            return None, None
-        
-        try:
-            primary_key = get_user_input(f"Enter the primary key of the record to {verb}: ")
-            primary_key = int(primary_key) # TODO fix this for non ints
-        except EmptyInputError:
-            print_error("Empty record key. Aborting.")
-            return None, None
-        except ValueError:
-            print_error("Invalid key. Aborting.")
-            return None, None
-        
-        try:
-            return self.database_manager.current_database.find(primary_key)
-        except RecordNotFoundError:
-            print_error(f"No record found with key {primary_key}")
-            return None, None
-
-    def no_databases_open(self):
-        """ returns True and prints error message if no databases are open """
-        if not self.database_manager.database_is_open():
-            print_error("No database open. Aborting.")
-            return True
-        return False
-
-    def get_main_dir(self):
-        return os.path.abspath(os.path.join(get_current_dir(__file__), '..'))
-
-
     # user commands
     def create_database(self):
         print("Creating database...")
@@ -190,9 +127,6 @@ class CommandLineInterface:
             except InvalidRecordSizeError:
                 print_error("One or more fields too long to store. Aborting")
 
-        
-        
-
     def create_report(self):
         if self.no_databases_open():
             return
@@ -205,8 +139,6 @@ class CommandLineInterface:
             f.write(self.format_records(records))
 
         print(f'Report generated at {path}.')
-
-
 
     def add_record(self):
         if self.no_databases_open():
@@ -227,7 +159,6 @@ class CommandLineInterface:
             except InvalidRecordSizeError:
                 print_error("One or more fields too long to store. Aborting")
 
-
     def delete_record(self):
         index, record = self.prompt_user_to_find_record("delete")
         if record is None:
@@ -239,9 +170,71 @@ class CommandLineInterface:
         if confirm(prompt, default='y'):
             self.database_manager.current_database.delete(index)
 
-
     def quit(self):
         if confirm("Are you sure you want to quit? [Y/n] ", default='y'):
             print("Exiting...")
             exit()
             
+
+    # util methods
+    def print_welcome(self):
+        print("Welcome to KyleDB!")
+
+    def print_menu(self):
+        print_options(list(self.NAME_TO_COMMAND.keys()))
+
+    def print_input_error(self):
+        print('Empty or invalid command. Select an integer from 1-9 or type the name of a command.')
+
+    def print_record(self, record):
+        print(self.format_records([record]))
+
+    def format_records(self, records):
+        spacing = 2
+        db = self.database_manager.current_database
+        data = []
+        data.append(db.fields)
+        data.extend(records)
+        max_column_widths = [max_len([x[i] for x in data]) for i in range(db.num_fields)]
+
+        output = ''
+        for row in data:
+            for i in range(db.num_fields):
+                output += fixed_len(row[i], max_column_widths[i]+spacing)
+            output += '\n'
+
+        return output
+
+    def prompt_user_to_find_record(self, verb):
+        """ prompts the user to find a record by primary key
+            returns record and index of record if found
+        """
+        if self.no_databases_open():
+            return None, None
+        
+        try:
+            primary_key = get_user_input(f"Enter the primary key of the record to {verb}: ")
+            primary_key = int(primary_key) # TODO fix this for non ints
+        except EmptyInputError:
+            print_error("Empty record key. Aborting.")
+            return None, None
+        except ValueError:
+            print_error("Invalid key. Aborting.")
+            return None, None
+        
+        try:
+            return self.database_manager.current_database.find(primary_key)
+        except RecordNotFoundError:
+            print_error(f"No record found with key {primary_key}")
+            return None, None
+
+    def no_databases_open(self):
+        """ returns True and prints error message if no databases are open """
+        if not self.database_manager.database_is_open():
+            print_error("No database open. Aborting.")
+            return True
+        return False
+
+    def get_main_dir(self):
+        """ return path of top-level directory """
+        return os.path.abspath(os.path.join(get_current_dir(__file__), '..'))

@@ -12,8 +12,6 @@ from .data_file import DataFile
 
 """
 
-# TODO refactor into database file class
-
 class Database:
     """ class that manages data using a directory """
     def __init__(self, data_dir):
@@ -38,7 +36,10 @@ class Database:
 
     @property
     def name(self):
-        return self.data_file.name
+        try:
+            return self.data_file.name
+        except AttributeError:
+            return os.path.basename(os.path.splitext(self.dir)[0])
 
     @property
     def fields(self):
@@ -164,7 +165,6 @@ class Database:
         return all(self.data_file[i] == None for i in range(start_idx+1, end_idx))
 
 
-    # TODO debug
     def insert_binary_search(self, key, start_index, end_index):
         """ return index for which to store key in database.
             start and end indices are guaranteed to contain records with keys unequal to given key

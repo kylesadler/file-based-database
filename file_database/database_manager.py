@@ -43,7 +43,6 @@ class DatabaseManager:
         output = []
         for dir_name in os.listdir(self.data_dir):
             path = os.path.join(self.data_dir, dir_name)
-            print(path)
             if os.path.isdir(path):
                 output.append(Database(path))
 
