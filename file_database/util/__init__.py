@@ -70,3 +70,14 @@ def max_len(a_list):
 
 def fixed_len(string, length):
     return string.ljust(length)
+
+def get_key(record):
+    """ returns key from record """
+    return int(record[0])
+
+
+def parse_csv_line(line):
+    """ from a CSV line, returns list of fields. removes newline at end """
+    if line[-1] == '\n':
+        line = line[:-1]
+    return line.split(',')

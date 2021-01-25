@@ -185,8 +185,10 @@ class CommandLineInterface:
         
         prompt = f"Are you sure you want to update {field} to \"{new_value}\"? [Y/n] "
         if confirm(prompt, default='y'):
-            self.database_manager.current_database.update(index, record, field, new_value)
-
+            try:
+                self.database_manager.current_database.update(index, record, field, new_value)
+            except InvalidRecordSizeError:
+                print_error("One or more fields too long to store. Aborting")
 
         
         
@@ -220,7 +222,10 @@ class CommandLineInterface:
 
         prompt = f"Are you sure you want to add this record? [Y/n] "
         if confirm(prompt, default='y'):
-            self.database_manager.current_database.insert(record)
+            try:
+                self.database_manager.current_database.insert(record)
+            except InvalidRecordSizeError:
+                print_error("One or more fields too long to store. Aborting")
 
 
     def delete_record(self):

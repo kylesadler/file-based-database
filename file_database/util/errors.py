@@ -41,3 +41,11 @@ class InvalidRecordIndexError(Error):
 class UpdatePrimaryKeyError(Error):
     """Raised when the user tries to update a record's primary key"""
     pass
+
+class NoSpaceToInsertError(Error):
+    """Raised when there is not room to insert a new record in the current database file"""
+    pass
+
+class InvalidRecordSizeError(Error):
+    """Raised when a record is too long to insert into the database"""
+    pass
