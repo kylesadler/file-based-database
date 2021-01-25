@@ -156,7 +156,9 @@ class CommandLineInterface:
             try:
                 self.database_manager.current_database.insert(record)
             except InvalidRecordSizeError:
-                print_error("One or more fields too long to store. Aborting")
+                print_error("One or more fields too long to store. Aborting.")
+            except DuplicatePrimaryKeyError:
+                print_error("Primary key is not unique. Aborting.")
 
     def delete_record(self):
         index, record = self.prompt_user_to_find_record("delete")

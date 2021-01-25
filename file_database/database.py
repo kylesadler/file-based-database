@@ -95,23 +95,18 @@ class Database:
 
         key = get_key(record)
 
-        # if record should go at start of file
-        first_index, first_key, first_record = self._get_nonblank_record(self.data_file.MIN_INDEX)
-        if first_key >= key:
-            if self.data_file[self.data_file.MIN_INDEX] is None:
-                self.data_file[self.data_file.MIN_INDEX] = record
-                return
-            else:
-                return self.data_file.insert_and_rewrite(record)
+        # check if record should be inserted at start or end of the file
+        first_index, first_key, _ = self._get_nonblank_record(self.data_file.MIN_INDEX)
+        last_index, last_key, _ = self._get_last_nonblank_record()
         
-        # if record should go at end of file
-        last_index, last_key, last_record = self._get_last_nonblank_record()
-        if last_key <= key:
-            if self.data_file[self.data_file.MAX_INDEX] is None:
-                self.data_file[self.data_file.MAX_INDEX] = record
-                return
-            else:
-                return self.data_file.insert_and_rewrite(record)
+        if key in [first_key, last_key]:
+            raise DuplicatePrimaryKeyError()
+        
+        if key < first_key:
+            return self._insert_at(self.data_file.MIN_INDEX, record)
+        
+        if key > last_key:
+            return self._insert_at(self.data_file.MAX_INDEX, record)
 
         try:
             index = self._binary_insert(key, first_index, last_index)
@@ -173,11 +168,12 @@ class Database:
                 return mid # no records between start and end indices
 
         if record_key == key:
+            raise DuplicatePrimaryKeyError()
             # try to find empty space before or after
-            for i in [index-1, index+1]:
-                if self.data_file[i] is None:
-                    return i
-            raise NoSpaceToInsertError()
+            # for i in [index-1, index+1]:
+            #     if self.data_file[i] is None:
+            #         return i
+            # raise NoSpaceToInsertError()
         elif record_key > key:
             return self._binary_insert(key, start_index, index)
         else:
@@ -204,12 +200,12 @@ class Database:
         config_path = os.path.join(self.dir, config_path)
         return data_path, config_path
 
-    def _get_nonblank_record(self, i):
-        """ returns index, key, and record of first nonblank record at or after index i """
-        for index in range(i, len(self.data_file)):
-            record = self.data_file[index]
+    def _get_nonblank_record(self, index):
+        """ returns index, key, and record of first nonblank record at or after index """
+        for i in range(index, len(self.data_file)):
+            record = self.data_file[i]
             if record is not None:
-                return index, get_key(record), record
+                return i, get_key(record), record
             
         raise RecordNotFoundError()
 
@@ -219,3 +215,12 @@ class Database:
             record = self.data_file[i]
             if record is not None:
                 return i, get_key(record), record
+
+        raise RecordNotFoundError()
+
+    def _insert_at(self, record, index):
+        """ tries to insert a record at index, rewriting the data_file if necessary """
+        if self.data_file[index] is None:
+            self.data_file[index] = record
+        else:
+            self.data_file.insert_and_rewrite(record)

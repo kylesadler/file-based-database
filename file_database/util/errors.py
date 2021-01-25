@@ -21,6 +21,10 @@ class DuplicateDatabaseNameError(Exception):
     """Raised when a database name is not unique"""
     pass
 
+class DuplicatePrimaryKeyError(Exception):
+    """Raised when the user tries to insert a record with a duplicat primary key"""
+    pass
+
 class RecordNotFoundError(Exception):
     """Raised when no record is found in a database"""
     pass
