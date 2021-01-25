@@ -2,13 +2,9 @@ import os
 from .util import *
 import shutil
 
-""" TODO
-    this does not handle files with commas in values
-
-    illegal characters: , :
-
-    make sure record size does not overflow
-
+""" NOTE
+    this does not handle files with commas or newlines in values
+    illegal characters: , \n
 """
 
 class DataFile:
@@ -199,7 +195,7 @@ class DataFile:
 
     def _seek_to(self, line_num):
         if not self._is_valid_index(line_num):
-            raise InvalidRecordIndexError()
+            raise IndexError()
         self.file.seek(line_num * self.line_size)
 
     def _is_valid_index(self, index):

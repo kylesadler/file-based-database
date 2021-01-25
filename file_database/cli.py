@@ -97,21 +97,20 @@ class CommandLineInterface:
         self.print_record(record)
         try:
             field = get_option_from_user(
-                f"Enter the field to update: ",
+                "Enter the field to update: ",
                 self.database_manager.current_database.fields
             )
-            # cant update primary key
-            if field == self.database_manager.current_database.fields[0]:
-                raise UpdatePrimaryKeyError()
         except EmptyInputError:
             print_error("Empty field. Aborting")
-            return
-        except UpdatePrimaryKeyError:
-            print_error("Cannot update primary Key. Aborting")
             return
         except InvalidInputError:
             print_error(f"Field does not exist. Aborting")
             return
+        else:
+            # cant update primary key
+            if field == self.database_manager.current_database.fields[0]:
+                print_error("Cannot update primary Key. Aborting")
+                return
             
 
         try:

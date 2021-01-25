@@ -25,9 +25,6 @@ class DatabaseManager:
 
 
     def open_database(self, name):
-        if self.database_is_open():
-            raise DatabaseOpenError()
-        
         options = [d for d in self.databases if d.name == name]
         assert len(options) == 1
         self.current_database = options[0]
