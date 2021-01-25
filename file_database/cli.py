@@ -149,6 +149,12 @@ class CommandLineInterface:
             value = input(f'Enter field "{field}": ') or ''
             record.append(value)
 
+        try:
+            get_key(record)
+        except ValueError:
+            return print_error("Invalid primary key. Must be an integer. Aborting.")
+
+
         self.print_record(record)
 
         prompt = f"Are you sure you want to add this record? [Y/n] "

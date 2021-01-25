@@ -83,4 +83,4 @@ def pad(string, length):
 
 def get_key(record):
     """ returns key from record """
-    return int(record[0])
+    return int(record[0]) # TODO fix this for non ints

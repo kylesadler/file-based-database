@@ -218,7 +218,7 @@ class Database:
 
         raise RecordNotFoundError()
 
-    def _insert_at(self, record, index):
+    def _insert_at(self, index, record):
         """ tries to insert a record at index, rewriting the data_file if necessary """
         if self.data_file[index] is None:
             self.data_file[index] = record
