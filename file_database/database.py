@@ -96,7 +96,7 @@ class Database:
         key = get_key(record)
 
         # if record should go at start of file
-        first_index, first_key first_record = self._get_nonblank_record(self.data_file.MIN_INDEX)
+        first_index, first_key, first_record = self._get_nonblank_record(self.data_file.MIN_INDEX)
         if first_key >= key:
             if self.data_file[self.data_file.MIN_INDEX] is None:
                 self.data_file[self.data_file.MIN_INDEX] = record
