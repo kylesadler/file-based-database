@@ -137,7 +137,6 @@ class Database:
                 self.data_file[self.data_file.MIN_INDEX] = record
                 return
             else:
-                print('here <------')
                 return self.data_file.insert_and_rewrite(record)
         
         # if record should go at end of file
@@ -147,16 +146,13 @@ class Database:
                 self.data_file[self.data_file.MAX_INDEX] = record
                 return
             else:
-                print('here2 <------')
                 return self.data_file.insert_and_rewrite(record)
 
         try:
             index = self.insert_binary_search(key, first_index, last_index)
         except NoSpaceToInsertError:
-            print('herre3')
             self.data_file.insert_and_rewrite(record)
         else:
-            print('index', index)
             self.data_file[index] = record
 
 
@@ -176,7 +172,7 @@ class Database:
 
         mid = (end_index + start_index) // 2
         index, record_key, record = self.get_nonblank_record_and_key(mid)
-        print(start_index, mid, index, end_index, key, record_key)
+        # print(start_index, mid, index, end_index, key, record_key)
 
         if index == end_index: # no records between mid and end_index
             record = None
