@@ -200,7 +200,7 @@ class CommandLineInterface:
         output = ''
         for row in data:
             for i in range(db.num_fields):
-                output += fixed_len(row[i], max_column_widths[i]+spacing)
+                output += pad(row[i], max_column_widths[i]+spacing)
             output += '\n'
 
         return output

@@ -32,6 +32,15 @@ def get_option_from_user(message, options):
                 raise InvalidInputError()
             return selected_options[0]
 
+def confirm(question, default):
+    """ asks a yes/no question to the user and converts their answer to a boolean """
+    assert default.lower() in ['y', 'n']
+    confirm = input(question) or default
+    return confirm.lower() in ['yes', 'y']
+
+def print_error(message):
+    """ prints an error message """
+    print(f"ERROR: {message}")
 
 def print_options(a_list):
     """ prints a nicely formatted numbered list of strings """
@@ -42,42 +51,35 @@ def print_options(a_list):
     print('\n' + '\n'.join(formatted_options) + '\n')
 
 
+def makedir(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
 def get_current_dir(file):
     """ returns the name of the current directory. 
         usage: get_current_dir(__file__)
     """
     return os.path.abspath(os.path.dirname(file))
 
-def print_error(message):
-    print(f"ERROR: {message}")
-
 def is_csv_file(path):
     """ returns True if path is a path to a valid csv file """
     return os.path.exists(path) and os.path.isfile(path) and os.path.splitext(path)[-1] == '.csv'
-
-def makedir(path):
-    if not os.path.exists(path):
-        os.makedirs(path)
-
-def confirm(question, default):
-    assert default.lower() in ['y', 'n']
-    confirm = input(question) or default
-    return confirm.lower() in ['yes', 'y']
-
-def max_len(a_list):
-    """ returns max length of elements in a list """
-    return max(len(x) for x in a_list)
-
-def fixed_len(string, length):
-    return string.ljust(length)
-
-def get_key(record):
-    """ returns key from record """
-    return int(record[0])
-
 
 def parse_csv_line(line):
     """ from a CSV line, returns list of fields. removes newline at end """
     if line[-1] == '\n':
         line = line[:-1]
     return line.split(',')
+
+
+def max_len(a_list):
+    """ returns max length of elements in a list """
+    return max(len(x) for x in a_list)
+
+def pad(string, length):
+    """ pads a string with spaces until it has length length """
+    return string.ljust(length)
+
+def get_key(record):
+    """ returns key from record """
+    return int(record[0])

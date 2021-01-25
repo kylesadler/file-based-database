@@ -3,15 +3,6 @@ from .util import *
 import shutil
 from .data_file import DataFile
 
-""" TODO
-    this does not handle files with commas in values
-
-    illegal characters: , :
-
-    make sure record size does not overflow
-
-"""
-
 class Database:
     """ class that manages data using a directory """
     def __init__(self, data_dir):

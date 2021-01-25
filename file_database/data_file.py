@@ -163,7 +163,7 @@ class DataFile:
             returns a string that is padded with the correct field widths
         """
 
-        return ''.join([fixed_len(x, l) for x, l in zip(record, self.field_to_length.values())]) + '\n'
+        return ''.join([pad(x, l) for x, l in zip(record, self.field_to_length.values())]) + '\n'
 
     def _load_config(self):
         """ reads config file and initializes
