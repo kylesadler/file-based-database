@@ -1,2 +1,2 @@
 # file-based-database
-a simple database using files for data storage
+a simple file-based database for storing fixed-length records
